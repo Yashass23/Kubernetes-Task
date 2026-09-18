@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: metrics
+  labels:
+    app: metrics
+    {{- include "lab.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.metrics.replicas }}
+  selector:
+    matchLabels:
+      app: metrics
+  template:
+    metadata:
+      labels:
+        app: metrics
+    spec:
+      automountServiceAccountToken: false
+      containers:
+        - name: metrics
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            {{- range $name, $value := .Values.metrics.env }}
+            - name: {{ $name }}
+              value: {{ $value | quote }}
+            {{- end }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: metrics
+  labels:
+    app: metrics
+    {{- include "lab.labels" . | nindent 4 }}
+spec:
+  selector:
+    app: metrics
+  ports:
+    - name: http
+      port: 8080
+      targetPort: {{ .Values.common.port }}
