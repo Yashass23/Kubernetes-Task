@@ -1,0 +1,26 @@
+{
+  "name": "DevOps Kubernetes Take Home",
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu-24.04",
+
+  "features": {
+    "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {
+      "version": "latest"
+    }
+  },
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-kubernetes-tools.vscode-kubernetes-tools",
+        "redhat.vscode-yaml",
+        "hashicorp.terraform",
+        "github.vscode-github-actions",
+        "timonwong.shellcheck"
+      ]
+    }
+  },
+
+  "postCreateCommand": "bash .devcontainer/install-tools.sh",
+
+  "remoteUser": "vscode"
+}
