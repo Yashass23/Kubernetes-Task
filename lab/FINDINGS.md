@@ -2,6 +2,10 @@
 
 ## Defect 1: Invalid migration Job restart policy
 
+**Problem file:** `lab/broken-chart/templates/migrate-job.yaml`
+
+The incorrect setting was in the migration Job Pod template under `spec.template.spec.restartPolicy`.
+
 **Symptom:**
 
 ```text
@@ -16,6 +20,10 @@ Job.batch "migrate" is invalid: spec.template.spec.restartPolicy: Required value
 
 ## Defect 2: Image user could not satisfy runAsNonRoot
 
+**Problem files:** `lab/broken-chart/templates/backend.yaml`, `gateway.yaml`, `worker.yaml`, `reporter.yaml`, and `metrics.yaml`
+
+Each workload template set the incompatible container security setting under its container `securityContext`.
+
 **Symptom:**
 
 ```text
@@ -29,6 +37,10 @@ Error: container has runAsNonRoot and image has non-numeric user (nonroot), cann
 **How I found it:** `kubectl get events --sort-by=.lastTimestamp` and `kubectl describe pod` showed `CreateContainerConfigError` for every workload.
 
 ## Defect 3: Workloads used the wrong application port
+
+**Problem files:** `lab/broken-chart/values.yaml` and the workload templates under `lab/broken-chart/templates/`
+
+The shared port was configured in `values.yaml` under `common.port`; the Deployment probes and container/service target ports consumed that value from the templates.
 
 **Symptom:**
 
@@ -50,6 +62,10 @@ eb-debug-app 2.0.0 starting: mode=api ... listening on :8081 (image default is 8
 
 ## Defect 4: Worker had no writable cache directory
 
+**Problem file:** `lab/broken-chart/templates/worker.yaml`
+
+The worker container used a read-only root filesystem but had no `volumeMounts` or Pod-level `emptyDir` volume for `/var/cache/app`.
+
 **Symptom:**
 
 ```text
@@ -63,6 +79,10 @@ FATAL: worker could not initialise its cache: mkdir /var/cache/app: read-only fi
 **How I found it:** `kubectl logs` on the worker after the Pod started showed the exact filesystem path and recommended remedy.
 
 ## Defect 5: Metrics exceeded the namespace CPU ceiling
+
+**Problem file:** `lab/broken-chart/values.yaml`
+
+The incorrect CPU request and limit were under `metrics.resources`. The namespace ceiling came from the unchanged environment file `lab/cluster-state/limits.yaml`.
 
 **Symptom:** The metrics Pod described:
 
@@ -82,6 +102,10 @@ The namespace LimitRange defines a maximum CPU of `1` per container.
 **How I found it:** Compared `kubectl -n debug-lab describe pod -l app=metrics` with `kubectl -n debug-lab get limitrange -o yaml`.
 
 ## Defect 6: Gateway and reporter permissions/configuration were incorrect
+
+**Problem files:** `lab/broken-chart/values.yaml` and `lab/broken-chart/templates/rbac.yaml`
+
+The gateway URL was under `gateway.env.BACKEND_URL` in `values.yaml`; the incorrect ServiceAccount subject was in the RoleBinding in `templates/rbac.yaml`.
 
 **Symptom:** The gateway environment contained:
 
